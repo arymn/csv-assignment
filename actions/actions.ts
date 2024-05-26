@@ -1,11 +1,14 @@
 "use server";
 import fs from "fs";
 import { revalidatePath } from "next/cache";
-import { csvParsingQueue } from "@/lib/queue";
+import { csvParsingQueue } from "@/queue/worker";
 import { Job } from "bullmq";
 import Papa from "papaparse";
-import csvParser from "csv-parser";
-import neatCsv from "neat-csv";
+import { parse } from "csv-parse/sync";
+// const executeJob = async (name: string, bufferedData: File) => {
+//   const job = await Job.create(sampleQueue, name, { data: bufferedData });
+//   await addJob(job);
+// };
 
 export async function uploadFile(formData: FormData) {
   async function addJob(job: Job) {
@@ -16,8 +19,7 @@ export async function uploadFile(formData: FormData) {
   const file = formData.get("file") as File;
   const arrayBuffer = await file.arrayBuffer();
   const fileStream = Buffer.from(arrayBuffer);
-  const d = await neatCsv(fileStream);
-  console.log("d", d);
+  const d = parse(fileStream, { columns: true });
   const job = await Job.create(csvParsingQueue, file.name, fileStream);
   await addJob(job);
   // executeJob("sampleQueue", file);
